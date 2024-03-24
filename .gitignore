@@ -1,0 +1,10 @@
+/data/Chair
+/data/Lamp
+/data/Table
+/proj_log
+/results
+# *.pyc
+*.o
+__pycache__
+/build
+*.sbatch
