@@ -42,10 +42,21 @@ def vis_voxel(voxel, save_image=False):
     plt.show()
 
 
+def main(test=False):
+    # shape_name = '14231'
+    # shape_name = '14240'
+    # shape_name = '14277'
+    # shape_name = '14297'
+    shape_name = '14300'
+    dir = 'data/Lamp/' if not test else 'proj_log/pqnet-PartNet-Lamp_copy/results/rec-ckpt-1000-voxel-p0/'
+    path = dir + shape_name + '.h5'
+    with h5py.File(path, 'r') as fp:
+        voxel = fp['voxel'][:] if test else fp['shape_voxel64'][:]
+    # vis_voxel(voxel)
+    filename = f'voxel/{shape_name}_data' if not test else f'voxel/{shape_name}_rec'
+    visualize_ndvoxel(voxel, filename)
+
 
 if __name__ == "__main__":
-    path = 'proj_log/pqnet-PartNet-Lamp_copy/results/rec-ckpt-1000-voxel-p0/14297.h5'
-    with h5py.File(path, 'r') as fp:
-        voxel = fp['voxel'][:]
-    # vis_voxel(voxel)
-    visualize_ndvoxel(voxel)
+    main(test=True)
+    main(test=False)

@@ -8,3 +8,9 @@
 __pycache__
 /build
 *.sbatch
+*.ply
+/external
+*.json
+*.png
+.DS_Store
+*.so
