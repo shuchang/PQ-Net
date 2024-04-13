@@ -1,5 +1,6 @@
 from networks.networks_partae import PartImNetAE
 from networks.networks_seq2seq import Seq2SeqAE
+from networks.networks_transformer import TransformerAE
 from networks.networks_lgan import Generator, Discriminator
 from dataset.data_utils import n_parts_map
 
@@ -12,6 +13,8 @@ def get_network(name, config):
         en_input_size = part_feat_size + n_parts_map(config.max_n_parts) + 1
         de_input_size = part_feat_size
         net = Seq2SeqAE(en_input_size, de_input_size, config.hidden_size)
+    elif name == 'transformer':
+        net = TransformerAE()
     elif name == 'G':
         net = Generator(config.n_dim, config.h_dim, config.z_dim)
     elif name == 'D':

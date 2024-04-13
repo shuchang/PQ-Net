@@ -1,5 +1,6 @@
 from agent.agent_partae import PartAEAgent
 from agent.agent_seq2seq import Seq2SeqAgent
+from agent.agent_transformer import TransformerAgent
 from agent.agent_lgan import WGANAgant
 from agent.pqnet import PQNET
 
@@ -9,6 +10,8 @@ def get_agent(config):
         return PartAEAgent(config)
     elif config.module == 'seq2seq':
         return Seq2SeqAgent(config)
+    elif config.module == 'transformer':
+        return TransformerAgent(config)
     else:
         raise ValueError
 

@@ -6,8 +6,25 @@ from tqdm import tqdm
 import json
 import argparse
 from scipy.spatial import KDTree
-from pc_utils import read_ply
+from pc_utils import read_ply, sample_point_cloud_by_n
 import numpy.linalg as LA
+
+
+def scale_to_unit_sphere(points, center=None):
+    """
+    scale point clouds into a unit sphere
+    :param points: (n, 3) numpy array
+    :return:
+    """
+    if center is None:
+        midpoints = (np.max(points, axis=0) + np.min(points, axis=0)) / 2
+        # midpoints = np.mean(points, axis=0)
+    else:
+        midpoints = np.asarray(center)
+    points = points - midpoints
+    scale = np.max(np.sqrt(np.sum(points ** 2, axis=1)))
+    points = points / scale
+    return points
 
 
 def chamfer_distance(a, b):
@@ -16,6 +33,7 @@ def chamfer_distance(a, b):
     tree = KDTree(a)
     dist_b = tree.query(b)[0]
     return np.mean(dist_a) + np.mean(dist_b)
+
 
 def array2samples_distance(array1, array2):
     """
@@ -75,7 +93,7 @@ def IoUarr(arr1, arr2, inside=0, reduce_mean=True):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--metric', type=str, default='iou')
+    parser.add_argument('--metric', type=str, default='cd')
     parser.add_argument('--data', type=str, help='data directory', default='/Users/shuc/Desktop/course/PQ-Net/data/Lamp')
     parser.add_argument('--rec', type=str, help='reconstruction directory', default='/Users/shuc/Desktop/course/PQ-Net/proj_log/pqnet-PartNet-Lamp_copy/results/rec-ckpt-1000-voxel-p0')
     
@@ -85,12 +103,12 @@ def main():
     rec_root = args.rec if args.metric == 'iou' else args.rec + '_pc'
 
     shape_names = sorted(os.listdir(rec_root))
-    shape_names = [name for name in shape_names if name.endswith('.h5')]
+    vox_names = [name for name in shape_names if name.endswith('.h5')]
     pc_names = [name for name in shape_names if name.endswith('.ply')]
-    total_valid_nums = 0
     iou = []
     cd = []
-    for name in tqdm(shape_names):
+
+    for name in tqdm(vox_names):
         vol_path1 = os.path.join(rec_root, name)
         with h5py.File(vol_path1, "r") as fp:
             voxel1 = fp['voxel'][:]
@@ -102,16 +120,16 @@ def main():
 
     for name in tqdm(pc_names):
         pc_path1 = os.path.join(rec_root, name)
-        pc1 = read_ply(pc_path1)
+        pc1 = scale_to_unit_sphere(read_ply(pc_path1))
         pc_path2 = os.path.join(data_root, name)
-        pc2 = read_ply(pc_path2)
+        pc2 = scale_to_unit_sphere(read_ply(pc_path2))
 
         cd.append(chamfer_distance_numpy(pc1, pc2))
 
     iou = np.array(iou)
     cd = np.array(cd)
     print(iou.mean())
-    # print(cd.mean())
+    print(cd.mean())
 
 
 if __name__ == "__main__":
