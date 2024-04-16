@@ -66,7 +66,7 @@ def sample_points_from_vox3d(voxel_model_64, dim_voxel, batch_size, d=2, sigma=0
     exceed = 0
 
     # sample points near surface
-    sample_points = np.zeros([batch_size, 3], np.float)
+    sample_points = np.zeros([batch_size, 3], float)
     sample_values = np.zeros([batch_size, 1], np.uint8)
     batch_size_counter = 0
     voxel_model_flag = np.zeros_like(voxel_model, dtype=np.uint8)
@@ -178,7 +178,7 @@ def process_one(src_shape_hdf5_path):
             del fp['values_64']
         except:
             pass
-        fp.create_dataset("points_{}".format(dim_voxel), [n_parts, batch_size, 3], np.float, compression=9, data=parts_points)
+        fp.create_dataset("points_{}".format(dim_voxel), [n_parts, batch_size, 3], float, compression=9, data=parts_points)
         fp.create_dataset("values_{}".format(dim_voxel), [n_parts, batch_size, 1], np.uint8, compression=9, data=parts_values)
 
     # sample points at resolution 32x32x32
@@ -209,7 +209,7 @@ def process_one(src_shape_hdf5_path):
             del fp['values_32']
         except:
             pass
-        fp.create_dataset("points_{}".format(dim_voxel), [n_parts, batch_size, 3], np.float, compression=9, data=parts_points)
+        fp.create_dataset("points_{}".format(dim_voxel), [n_parts, batch_size, 3], float, compression=9, data=parts_points)
         fp.create_dataset("values_{}".format(dim_voxel), [n_parts, batch_size, 1], np.uint8, compression=9, data=parts_values)
 
     # sample points at resolution 16x16x16
@@ -240,7 +240,7 @@ def process_one(src_shape_hdf5_path):
             del fp['values_16']
         except:
             pass
-        fp.create_dataset("points_{}".format(dim_voxel), [n_parts, batch_size, 3], np.float, compression=9, data=parts_points)
+        fp.create_dataset("points_{}".format(dim_voxel), [n_parts, batch_size, 3], float, compression=9, data=parts_points)
         fp.create_dataset("values_{}".format(dim_voxel), [n_parts, batch_size, 1], np.uint8, compression=9, data=parts_values)
 
 

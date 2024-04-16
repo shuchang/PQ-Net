@@ -104,8 +104,8 @@ def save_output(shape, data_id, save_dir, format):
 def main():
     # create experiment config
     config = get_config('pqnet')('test')
-    if not config.module == 'seq2seq':
-        raise ValueError("specify args.module == 'seq2seq' when testing")
+    if not config.module in ['seq2seq', 'transformer']:
+        raise ValueError("specify args.module in ['seq2seq', 'transformer'] when testing")
     config.batch_size = 1
     config.num_worker = 1
 

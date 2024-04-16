@@ -13,7 +13,7 @@ class TransformerAgent(BaseAgent):
         self.stop_weight = config.stop_weight
         self.boxparam_size = config.boxparam_size
 
-        self.bce_min = torch.tensor
+        self.bce_min = torch.tensor(1e-3, dtype=torch.float32, requires_grad=True).cuda()
 
     def build_net(self, config):
         # restore part encoder
@@ -43,21 +43,34 @@ class TransformerAgent(BaseAgent):
         row_vox3d = data['vox3d']   # (B, T, 1, vox_dim, vox_dim, vox_dim)
         batch_size, max_n_parts, vox_dim = row_vox3d.size(0), row_vox3d.size(1), row_vox3d.size(-1)
         batch_n_parts = data['n_parts']
-        target_stop = data['sign'].cuda()
-        bce_mask = data['mask'].cuda()
-        affine_input = data['affine_input'].cuda()
+        target_stop = data['sign'].cuda()   # (T, B, 1)
+        bce_mask = data['mask'].cuda()   # (T, B, 1)
+        affine_input = data['affine_input'].cuda()   # (T, B, 6)
         affine_target = data['affine_target'].cuda()
-        cond = data['cond'].cuda()
+        cond = data['cond'].cuda()   # (B, T-1, )
 
         batch_vox3d = row_vox3d.view(-1, 1, vox_dim, vox_dim, vox_dim).cuda()
         with torch.no_grad():
             part_geo_features = self.part_encoder(batch_vox3d)   # (B * T, z_dim)
             part_geo_features = part_geo_features.view(batch_size, max_n_parts, -1).transpose(0, 1)
-            cond_pack = cond.unsqueeze(0).repeat(affine_input.size(0), 1, 1)
+            cond_pack = cond.unsqueeze(0).repeat(affine_input.size(0), 1, 1)   # (T, B, T-1)
 
             target_part_geo = part_geo_features.detach()
             part_feature_seq = torch.cat([part_geo_features, affine_input, cond_pack], dim=2)
+            target_seq = torch.cat([target_part_geo, affine_target], dim=2)
 
+        output_seq, output_stop = self.net(part_feature_seq, target_seq, batch_n_parts)
+
+        bce_loss = self.bce_criterion(output_stop, target_stop) * bce_mask * self.stop_weight
+
+        code_rec_loss = self.rec_criterion(output_seq[:, :, :-self.boxparam_size], target_part_geo) * bce_mask
+        param_rec_loss = self.rec_criterion(output_seq[:, :, -self.boxparam_size:], affine_target) * bce_mask
+
+        code_rec_loss = torch.sum(code_rec_loss) / (torch.sum(bce_mask) * code_rec_loss.size(2))
+        param_rec_loss = torch.sum(param_rec_loss) / (torch.sum(bce_mask) * param_rec_loss.size(2))
+        bce_loss = torch.max(torch.sum(bce_loss) / torch.sum(bce_mask), self.bce_min)
+
+        return output_seq, {"code": code_rec_loss, "param": param_rec_loss, "stop": bce_loss}
 
     def visualize_batch(self, data, mode, outputs=None, **kwargs):
         tb = self.train_tb if mode == 'train' else self.val_tb

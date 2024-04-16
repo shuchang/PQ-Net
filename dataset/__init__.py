@@ -14,7 +14,7 @@ def get_dataloader(phase, config, use_all_points=False, is_shuffle=None):
                                 all_points=use_all_points, resolution=config.resolution)
         dataloader = DataLoader(dataset, batch_size=config.batch_size, shuffle=is_shuffle,
                                 num_workers=config.num_workers, worker_init_fn=np.random.seed())
-    elif config.module == 'seq2seq':
+    elif config.module in ['seq2seq', 'transformer']:
         dataset = Seq2SeqDataset(phase, config.data_root, config.category, config.max_n_parts)
         dataloader = DataLoader(dataset, batch_size=config.batch_size, shuffle=is_shuffle,
                                 num_workers=config.num_workers, collate_fn=pad_collate_fn_for_dict)

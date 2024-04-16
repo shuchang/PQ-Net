@@ -29,9 +29,9 @@ class PQNetConfig(object):
         self.model_dir = os.path.join(self.exp_dir, 'model_{}'.format(args.module))
 
         if phase == "train" and args.cont is not True and os.path.exists(self.log_dir):
-            response = input('Experiment log/model already exists, overwrite to retrain? (y/n) ')
-            if response != 'y':
-                exit()
+            # response = input('Experiment log/model already exists, overwrite to retrain? (y/n) ')
+            # if response != 'y':
+            #     exit()
             shutil.rmtree(self.log_dir)
             shutil.rmtree(self.model_dir)
 
@@ -49,7 +49,7 @@ class PQNetConfig(object):
         self.max_n_parts = MAX_N_PARTS_DICT[args.category]
 
         # pretrain partae path
-        if self.partae_modelpath is None and args.module == 'seq2seq':
+        if self.partae_modelpath is None and args.module in ['seq2seq', 'transformer']:
             self.partae_modelpath = os.path.join(self.exp_dir, "model_part_ae/latest.pth")
 
         # create soft link to experiment log directory
@@ -96,7 +96,7 @@ class PQNetConfig(object):
                            "Automatically generated based on data category if not provided.")
         group.add_argument('-g', '--gpu_ids', type=str, default="0",
                            help="gpu to use, e.g. 0  0,1,2. CPU not supported.")
-        group.add_argument('--module', type=str, choices=['part_ae', 'seq2seq'], required=True,
+        group.add_argument('--module', type=str, choices=['part_ae', 'seq2seq', 'transformer'], required=True,
                            help="which network module to set. use 'seq2seq' when testing.")
 
     def _add_dataset_config_(self, parser):

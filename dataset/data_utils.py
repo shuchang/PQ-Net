@@ -37,7 +37,7 @@ def load_from_hdf5_by_part(path, idx, resolution=64, rescale=True):
     """
     with h5py.File(path, 'r') as data_dict:
         n_parts = data_dict.attrs['n_parts']
-        parts_voxel = data_dict['parts_voxel_scaled64'][idx].astype(np.float)
+        parts_voxel = data_dict['parts_voxel_scaled64'][idx].astype(float)
         # scale = data_dict['scales'][idx]
         # translation = data_dict['translations'][idx]
         data_points = data_dict['points_{}'.format(resolution)][idx]
@@ -59,7 +59,7 @@ def load_from_hdf5_seq(path, max_n_parts, return_numpy=False, rescale_affine=Tru
     with h5py.File(path, 'r') as data_dict:
         n_parts = data_dict.attrs['n_parts']
         # model_voxel = data_dict['voxel64'][:]
-        parts_voxel = data_dict['parts_voxel_scaled64'][:].astype(np.float)
+        parts_voxel = data_dict['parts_voxel_scaled64'][:].astype(float)
         data_points64 = data_dict['points_64'][:]
         data_values64 = data_dict['values_64'][:]
         translation = data_dict['translations'][:]

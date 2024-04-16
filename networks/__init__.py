@@ -14,7 +14,10 @@ def get_network(name, config):
         de_input_size = part_feat_size
         net = Seq2SeqAE(en_input_size, de_input_size, config.hidden_size)
     elif name == 'transformer':
-        net = TransformerAE()
+        part_feat_size = config.en_z_dim + config.boxparam_size
+        en_input_size = part_feat_size
+        de_input_size = part_feat_size
+        net = TransformerAE(en_input_size, de_input_size, config.hidden_size)
     elif name == 'G':
         net = Generator(config.n_dim, config.h_dim, config.z_dim)
     elif name == 'D':

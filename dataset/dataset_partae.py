@@ -47,7 +47,7 @@ class PartAEDataset(Dataset):
             data_points = data_points[indices]
             data_values = data_values[indices]
 
-        batch_voxels = torch.tensor(parts_voxel.astype(np.float), dtype=torch.float32).unsqueeze(0)  # (1, dim, dim, dim)
+        batch_voxels = torch.tensor(parts_voxel.astype(float), dtype=torch.float32).unsqueeze(0)  # (1, dim, dim, dim)
         batch_points = torch.tensor(data_points, dtype=torch.float32)  # (points_batch_size, 3)
         batch_values = torch.tensor(data_values, dtype=torch.float32)  # (points_batch_size, 1)
         # batch_affine = torch.tensor(np.concatenate([scale, translation]), dtype=torch.float32)

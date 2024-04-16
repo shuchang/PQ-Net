@@ -22,7 +22,8 @@ class PQNET(object):
 
     def load_network(self, config):
         """load trained network module: seq2seq and part_ae"""
-        self.seq2seq = get_network("seq2seq", config)
+        # self.seq2seq = get_network("seq2seq", config)
+        self.seq2seq = get_network('transformer', config)
         name = config.ckpt if config.ckpt == 'latest' else "ckpt_epoch{}".format(config.ckpt)
         seq2seq_model_path = os.path.join(config.model_dir, "{}.pth".format(name))
         self.seq2seq.load_state_dict(torch.load(seq2seq_model_path)['model_state_dict'])
