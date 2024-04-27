@@ -79,8 +79,12 @@ class DecoderTransformer(nn.Module):
                                      nn.ReLU(True),
                                      nn.Dropout(0.2),
                                      nn.Linear(self.n_units_hidden2, 1),
-                                     nn.Sigmoid()
+                                    #  nn.Sigmoid()
                                      )
+        
+        self.lockdrop = LockedDropout()
+        self.dropout_i = 0.2
+        self.dropout_o = 0.2
 
     def forward(self, tgt, memory, tgt_mask=None,
                 memory_mask=None, tgt_key_padding_mask=None,
@@ -94,6 +98,7 @@ class DecoderTransformer(nn.Module):
             output_seq: (n_parts, batch, output_size)
             stop_sign: (n_parts, batch, 1)
         """
+        tgt = self.lockdrop(tgt, self.dropout_i)
         output = self.decoder(tgt, memory, tgt_mask=tgt_mask,
                               memory_mask=memory_mask,
                               tgt_key_padding_mask=tgt_key_padding_mask,
@@ -117,7 +122,7 @@ class DecoderTransformer(nn.Module):
 class TransformerAE(nn.Module):
     def __init__(self, en_input_size, de_input_size, hidden_size, n_head=2):
         super(TransformerAE, self).__init__()
-        self.n_layer = 3
+        self.n_layer = 2
         self.encoder = EncoderTransformer(en_input_size, n_head, hidden_size, self.n_layer)
         self.decoder = DecoderTransformer(de_input_size, n_head, hidden_size, self.n_layer)
         self.max_length = 10
@@ -134,7 +139,7 @@ class TransformerAE(nn.Module):
             input_len = input_seq.size(0)
             src_key_padding_mask = self.get_key_padding_mask(input_len, batch_n_parts).cuda()
 
-        input_seq = input_seq[:,:,:-6] # important: remove cond to have the same en_feat_dim and de_feat_dim
+        input_seq = input_seq[:,:,:134] # important: remove cond to have the same en_feat_dim and de_feat_dim
         memory = self.encoder(input_seq, src_key_padding_mask=src_key_padding_mask)
         return memory
 
@@ -161,25 +166,24 @@ class TransformerAE(nn.Module):
     
     def infer_decoder_stop(self, memory, length=None):
         # At inference time, we use decoder's predictions as the next step input
+        target_seq = self.decoder.init_input.detach().repeat(1, 1, 1).cuda()
         decoder_outputs = []
         stop_signs = []
-        target_seq = self.decoder.init_input.detach().repeat(1, 1, 1).cuda()
 
         for di in range(self.max_length):
             output_seq, stop_sign = self.decoder(target_seq, memory)
             decoder_outputs.append(output_seq[-1, :, :])
             stop_signs.append(stop_sign[-1, :, :])
-
             if length is not None:
                 if di == length - 1:
                     break
-            elif stop_sign[-1, 0, 0] > 0.5:
+            elif torch.sigmoid(stop_sign[-1, 0, 0]) > 0.5:
                 # stop condition
                 break
             target_seq = torch.cat([target_seq, output_seq[-1, :, :].unsqueeze(0)])
         decoder_outputs = torch.stack(decoder_outputs, dim=0)
         stop_signs = torch.stack(stop_signs, dim=0)
-        return target_seq, stop_sign
+        return decoder_outputs, stop_signs
 
 
     def forward(self, input_seq, target_seq, batch_n_parts):
@@ -202,6 +206,20 @@ class TransformerAE(nn.Module):
         mask = mask.float()
         mask[mask == 1] = float('-inf')
         return mask
+
+
+class LockedDropout(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x, dropout=0.5):
+        if not self.training or not dropout:
+            return x
+        m = x.data.new(1, x.size(1), x.size(2)).bernoulli_(1 - dropout)
+        # mask = Variable(m, requires_grad=False) / (1 - dropout)
+        mask = m.detach().clone().requires_grad_(False) / (1 - dropout)
+        mask = mask.expand_as(x)
+        return mask * x
 
 
 if __name__ == '__main__':

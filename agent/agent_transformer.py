@@ -13,7 +13,8 @@ class TransformerAgent(BaseAgent):
         self.stop_weight = config.stop_weight
         self.boxparam_size = config.boxparam_size
 
-        self.bce_min = torch.tensor(1e-3, dtype=torch.float32, requires_grad=True).cuda()
+        # self.bce_min = torch.tensor(1e-3, dtype=torch.float32, requires_grad=True).cuda()
+        self.bce_min = torch.tensor(1e-9, dtype=torch.float32, requires_grad=True).cuda()
 
     def build_net(self, config):
         # restore part encoder
@@ -30,7 +31,7 @@ class TransformerAgent(BaseAgent):
         # build rnn
         net = get_network('transformer', config).cuda()
         return net
-    
+
     def set_optimizer(self, config):
         self.optimizer = optim.Adam(self.net.parameters(), config.lr)
         self.scheduler = optim.lr_scheduler.ExponentialLR(self.optimizer, config.lr_decay)
