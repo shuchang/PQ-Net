@@ -4,9 +4,11 @@ from mpl_toolkits.mplot3d import Axes3D  # noqa: F401 unused import
 from matplotlib.colors import LightSource
 import seaborn as sns
 import h5py
+from config import get_config
+from util.utils import remkdir, ensure_dir
 
 
-def visualize_ndvoxel(voxel, filename=None):
+def visualize_ndvoxel(voxel, fname=None):
     """
 
     :param voxel:like (64,64,64) ndarray
@@ -24,14 +26,16 @@ def visualize_ndvoxel(voxel, filename=None):
         colors[voxel == i + 1] = current_palette[i]
 
     fig = plt.figure()
-    ax = fig.gca(projection='3d')
+    # ax = fig.gca(projection='3d')
+    ax = fig.add_subplot(projection='3d')
     ax.set_axis_off()
     ax.voxels(voxel, facecolors=colors, lightsource=LightSource(azdeg=315, altdeg=45))
     # ax.set(xlabel='x', ylabel='y', zlabel='z')
-    if filename:
-        plt.savefig(fname=filename)
+    if fname:
+        plt.savefig(fname=fname)
     else:
         plt.show()
+
 
 def vis_voxel(voxel, save_image=False):
     import matplotlib.pyplot as plt
@@ -42,21 +46,35 @@ def vis_voxel(voxel, save_image=False):
     plt.show()
 
 
-def main(test=False):
-    # shape_name = '14231'
-    # shape_name = '14240'
-    # shape_name = '14277'
-    # shape_name = '14297'
-    shape_name = '14300'
-    dir = 'data/Lamp/' if not test else 'proj_log/pqnet-PartNet-Lamp_copy/results/rec-ckpt-1000-voxel-p0/'
-    path = dir + shape_name + '.h5'
-    with h5py.File(path, 'r') as fp:
-        voxel = fp['voxel'][:] if test else fp['shape_voxel64'][:]
-    # vis_voxel(voxel)
-    filename = f'voxel/{shape_name}_data' if not test else f'voxel/{shape_name}_rec'
-    visualize_ndvoxel(voxel, filename)
+def main(vis_rec):
+    # create experiment config
+    config = get_config('pqnet')('test')
+    vis_dir = "{}/results/voxels".format(config.exp_dir)
+    # remkdir(vis_dir)
+    ensure_dir(vis_dir)
+    Lamp_shapes = ['14231', '14240','14277', '14297', '14300']
+
+    test_shapes = ['15729', '16698']
+    # test_shapes = ['36717', '38037']
+
+    for idx in test_shapes:
+        if not vis_rec:
+            dir = "data/{}/".format(config.category)
+            fname = "{}/{}_data".format(vis_dir, idx)
+        else:
+            dir = "{}/results/rec-ckpt-{}-{}-p{}/".format(
+                config.exp_dir, config.ckpt, config.format, int(config.by_part)
+                )
+            fname = "{}/{}_rec".format(vis_dir, idx)
+
+        path = "{}{}.h5".format(dir, idx)
+        with h5py.File(path, 'r') as fp:
+            voxel = fp['voxel'][:] if vis_rec else fp['shape_voxel64'][:]
+
+        # vis_voxel(voxel)
+        visualize_ndvoxel(voxel, fname)
 
 
 if __name__ == "__main__":
-    main(test=True)
-    main(test=False)
+    main(vis_rec=True)
+    main(vis_rec=False)
