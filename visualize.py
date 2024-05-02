@@ -49,15 +49,16 @@ def vis_voxel(voxel, save_image=False):
 def main(vis_rec):
     # create experiment config
     config = get_config('pqnet')('test')
-    vis_dir = "{}/results/voxels".format(config.exp_dir)
+    vis_dir = "{}/results/voxels_{}".format(config.exp_dir, config.module)
     # remkdir(vis_dir)
     ensure_dir(vis_dir)
     Lamp_shapes = ['14231', '14240','14277', '14297', '14300']
+    Chair_shapes = ['692', '753', '762', '1282', '1284']
 
-    test_shapes = ['15729', '16698']
-    # test_shapes = ['36717', '38037']
+    # test_Lamp_shapes = ['15729', '16698']
+    # test_Chair_shapes = ['36717', '38037']
 
-    for idx in test_shapes:
+    for idx in Chair_shapes:
         if not vis_rec:
             dir = "data/{}/".format(config.category)
             fname = "{}/{}_data".format(vis_dir, idx)
