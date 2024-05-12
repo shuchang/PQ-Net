@@ -127,21 +127,25 @@ class TransformerAE(nn.Module):
         self.decoder = DecoderTransformer(de_input_size, n_head, hidden_size, self.n_layer)
         self.max_length = 10
 
-    def infer_encoder(self, input_seq, batch_n_parts=None):
+    def infer_encoder(self, input_seq, batch_n_parts=None, decoder_only=False):
         """
         :param input_seq: (n_parts, batch_size, feature_dim)
         :return:
             memory: (n_parts, batch, feature_dim)
         """
-        if batch_n_parts is None:
-            src_key_padding_mask = None
-        else:
-            input_len = input_seq.size(0)
-            src_key_padding_mask = self.get_key_padding_mask(input_len, batch_n_parts).cuda()
+        # important: remove cond to have the same en_feat_dim and de_feat_dim
+        input_seq = input_seq[:,:,:134]
 
-        input_seq = input_seq[:,:,:134] # important: remove cond to have the same en_feat_dim and de_feat_dim
-        memory = self.encoder(input_seq, src_key_padding_mask=src_key_padding_mask)
-        return memory
+        if decoder_only:
+            return input_seq
+        else:
+            if batch_n_parts is None:
+                src_key_padding_mask = None
+            else:
+                input_len = input_seq.size(0)
+                src_key_padding_mask = self.get_key_padding_mask(input_len, batch_n_parts).cuda()
+            memory = self.encoder(input_seq, src_key_padding_mask=src_key_padding_mask)
+            return memory
 
     def infer_decoder(self, target_seq, memory, batch_n_parts):
         # For training Transformer, we always use target_seq as the next step input
@@ -192,8 +196,8 @@ class TransformerAE(nn.Module):
         :param target_seq: (seq_len, batch_size, feature_dim)
         :param batch_n_parts: list of `batch_size` int
         :return:
-            decoder_outputs: (seq_len, batch, )
-            stop_signs: (seq_len, batch, )
+            decoder_outputs: (seq_len, batch, feature_dim)
+            stop_signs: (seq_len, batch, feature_dim)
         """
 
         memory = self.infer_encoder(input_seq, batch_n_parts)
